@@ -5,7 +5,6 @@ import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 
 const app = express();
 
-// Intial Set up middlewares
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN,
@@ -26,8 +25,8 @@ app.use(
 );
 app.use(cookieParser());
 
+import userRoutes from "./routes/userRoutes.js";
 
-// Error Handling Middleware
 app.use(errorHandler);
 
 export { app };
