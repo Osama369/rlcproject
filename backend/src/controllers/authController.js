@@ -1,11 +1,10 @@
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
 
-export const register = async (req, res) => {
+const register = async (req, res) => {
   const { username, password, role } = req.body;
   try {
-    const user = new User({ username, password, role });
+    const user = new User({ username, dealerId , balance ,  password, role });
     await user.save();
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
@@ -13,10 +12,10 @@ export const register = async (req, res) => {
   }
 };
 
-export const login = async (req, res) => {
-  const { username, password } = req.body;
+const login = async (req, res) => {
+  const { dealerId, password } = req.body;
   try {
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ dealerId });
     if (!user) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
@@ -32,3 +31,22 @@ export const login = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+const adminLogin = async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const user = await User.findOne({ username });
+    if(!user){
+      return res.status(400).json({ error: 'Invalid credentials' });
+    }
+    return res.status(200).json({ message: 'Admin logged in successfully' });
+  }catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}
+
+export {
+  adminLogin,
+  register,
+  login,
+}
