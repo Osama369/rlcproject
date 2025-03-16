@@ -26,6 +26,7 @@ app.use(
 app.use(cookieParser());
 
 import userRoutes from "./routes/userRoutes.js";
+app.use("/users", userRoutes); // User Routes
 
 app.use(errorHandler);
 
