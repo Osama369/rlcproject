@@ -9,13 +9,29 @@ const dataSchema = new mongoose.Schema({
         type : String,
         required : true,
     }, 
+    date : {
+        type : Date,
+        reqquired : true,
+        default : Date.now,
+    },
     data : [
         {
-            
+            uniqueId : {
+                type : Number,
+                required : true,
+            },
+            firstPrice : {
+                type : Number,
+                required : true
+            },
+            secondPrice : {
+                type : Number,
+                required : true
+            }
         }
     ]
 } , {
     timestamps: true,
 });
 
-const Data = mongoose.model("Data", dataSchema);
+export default mongoose.model("Data", dataSchema);
