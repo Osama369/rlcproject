@@ -39,6 +39,10 @@ const adminLogin = async (req, res) => {
     if(!user){
       return res.status(400).json({ error: 'Invalid credentials' });
     }
+    const isAdmin = user.comparePassword(password);
+    if(!isAdmin){
+      return res.status(400).json({ error: 'Invalid credentials' });
+    }
     return res.status(200).json({ message: 'Admin logged in successfully' });
   }catch (error) {
     res.status(400).json({ error: error.message });
