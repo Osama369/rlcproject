@@ -1,36 +1,37 @@
-import mongoose, { Mongoose } from "mongoose";
+import mongoose from "mongoose";
 
 const dataSchema = new mongoose.Schema({
     userId: {
-        type : mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-    }, 
-    timeSlot : {
-        type : String,
-        required : true,
-    }, 
-    date : {
-        type : Date,
-        reqquired : true,
-        default : Date.now,
+        required: true,
     },
-    data : [
+    timeSlot: {
+        type: String,
+        required: true,
+    },
+    date: {
+        type: Date,
+        required: true,
+        default: Date.now,
+    },
+    data: [
         {
-            uniqueId : {
-                type : Number,
-                required : true,
+            uniqueId: {
+                type: Number,
+                required: true,
             },
-            firstPrice : {
-                type : Number,
-                required : true
+            firstPrice: {
+                type: Number,
+                required: true,
             },
-            secondPrice : {
-                type : Number,
-                required : true
-            }
-        }
-    ]
-} , {
+            secondPrice: {
+                type: Number,
+                required: true,
+            },
+        },
+    ],
+}, {
     timestamps: true,
 });
 

@@ -3,7 +3,7 @@ import Data from "../models/Data.js";
 const addDataForTimeSlot = async (req, res) => {
     const { timeSlot, data } = req.body;
     try {
-        const newData = new Data({ userId : req.userId, timeSlot, data , date : new Date().toISOString().slice(0, 10) });
+        const newData = new Data({ userId : req.user.id, timeSlot, data , date : new Date().toISOString().slice(0, 10) });
         await newData.save();
         res.status(201).json({ message: "Data added successfully" });
     } catch (error) {
