@@ -124,7 +124,7 @@ const deductUserBalance = async (req, res) => {
         message: "User not found",
       });
     }
-    user.amount -= amount;
+    user.balance -= amount;
     await user.save();
     return res.status(200).json({
       message: "User balance deducted successfully",
