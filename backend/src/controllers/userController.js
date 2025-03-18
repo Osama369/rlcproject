@@ -10,9 +10,9 @@ const getAllUsers = async (req, res) => {
 };
 
 const createUser = async (req, res) => {
-  const { username, password, dealerId, city } = req.body;
+  const { username, password, dealerId, city , phone , email } = req.body;
   try {
-    const user = new User({ username, password, city, dealerId });
+    const user = new User({ username, password, city, dealerId , phone , email }); 
     await user.save();
     res.status(201).json({ message: "User created successfully" });
   } catch (error) {
@@ -133,6 +133,24 @@ const deductUserBalance = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+const suspendedUsers = async (req, res) =>{
+  try {
+    const users = await User.find({isActive : false}).select("-password");
+    return res.json(users);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+}
+
+const activeUsers = async (req, res) =>{
+  try {
+    const users = await User.find({isActive : true}).select("-password");
+    return res.json(users);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });  
+  }
+}
 
 export {
   getAllUsers,

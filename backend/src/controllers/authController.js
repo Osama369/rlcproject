@@ -2,9 +2,9 @@ import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 
 const register = async (req, res) => {
-  const { username, password, dealerId } = req.body;
+  const { username, password, dealerId , city , phone , email } = req.body;
   try {
-    const user = new User({ username, dealerId , password });
+    const user = new User({ username, dealerId , password , phone , email , city });
     await user.save();
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {

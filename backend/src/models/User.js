@@ -3,6 +3,9 @@ import bcrypt from 'bcrypt';
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true }, 
+  phone: { type: String, required: true, unique: true },
+  hasSubscribed : { type: Boolean, default: false },
   city : { type: String },
   dealerId : { type: String },
   password: { type: String, required: true },
