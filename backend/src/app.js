@@ -26,7 +26,11 @@ app.use(
 app.use(cookieParser());
 
 import userRoutes from "./routes/userRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import dataRoutes from "./routes/dataRoutes.js";
+app.use("/auth", authRoutes); // Auth Routes
 app.use("/users", userRoutes); // User Routes
+app.use("/data", dataRoutes); // Data Routes 
 
 app.use(errorHandler);
 

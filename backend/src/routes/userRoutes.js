@@ -36,7 +36,6 @@ router.patch(
 router.patch(
   "/:id/balance/deduct",
   authMiddleware,
-  adminMiddleware,
   deductUserBalance
 );
 export default router;

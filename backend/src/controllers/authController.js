@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 const register = async (req, res) => {
   const { username, password, role } = req.body;
   try {
-    const user = new User({ username, dealerId , balance ,  password, role });
+    const user = new User({ username, dealerId , balance ,  password });
     await user.save();
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {

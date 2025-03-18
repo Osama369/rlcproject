@@ -22,10 +22,9 @@ const seedAdmin = async () => {
   }
 }
 
-seedAdmin();
-
 connectDB()
   .then(() => {
+    seedAdmin();
     app.listen(process.env.PORT || 5000, () => {
       console.log(`The server is running at ${process.env.PORT}`);
     });
