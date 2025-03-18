@@ -4,17 +4,13 @@ import {
     register,
     login,
 } from '../controllers/authController.js';
-import {
-    authMiddleware,
-    adminMiddleware,
-} from '../middlewares/authMiddleware.js';
 
 // Authentication Router
 const authRouter = express.Router();
 
 authRouter.post('/register', register);
-authRouter.post('/login', login);
-authRouter.post('/admin' , adminLogin);
+authRouter.post('/user-login', login);
+authRouter.post('/admin-login' , adminLogin);
 
 export default authRouter;
 

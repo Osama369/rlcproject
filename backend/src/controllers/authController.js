@@ -2,9 +2,9 @@ import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 
 const register = async (req, res) => {
-  const { username, password, role } = req.body;
+  const { username, password, dealerId } = req.body;
   try {
-    const user = new User({ username, dealerId , balance ,  password });
+    const user = new User({ username, dealerId , password });
     await user.save();
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
@@ -39,7 +39,8 @@ const adminLogin = async (req, res) => {
     if(!user){
       return res.status(400).json({ error: 'Invalid credentials' });
     }
-    const isAdmin = user.comparePassword(password);
+
+    const isAdmin = user.comparePassword(password) && user.role === 'admin';
     if(!isAdmin){
       return res.status(400).json({ error: 'Invalid credentials' });
     }

@@ -17,9 +17,9 @@ import {
 const router = express.Router();
 
 router.get("/", authMiddleware, adminMiddleware, getAllUsers);
-router.post("/", authMiddleware, adminMiddleware, createUser);
+router.post("/create-user", authMiddleware, adminMiddleware, createUser);
 router.get("/:id", authMiddleware, adminMiddleware, getUserById);
-router.put("/:id", authMiddleware, adminMiddleware, updateUser);
+router.patch("/:id", authMiddleware, adminMiddleware, updateUser);
 router.delete("/:id", authMiddleware, adminMiddleware, deleteUser);
 router.patch(
   "/:id/active",

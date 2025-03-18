@@ -2,7 +2,7 @@ import mongoose, { Mongoose } from "mongoose";
 
 const dataSchema = new mongoose.Schema({
     userId: {
-        type : Schema.Types.ObjectId,
+        type : mongoose.Schema.Types.ObjectId,
         ref: 'User',
     }, 
     timeSlot : {

@@ -7,7 +7,7 @@ import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const dataRouter = express.Router();
 
-dataRouter.post("/add", authMiddleware, addDataForTimeSlot);
-dataRouter.post("/get", authMiddleware, getDataForDate);
+dataRouter.post("/add-data", authMiddleware, addDataForTimeSlot);
+dataRouter.get("/get-data", authMiddleware, getDataForDate);
 
 export default dataRouter;
