@@ -1,11 +1,15 @@
+import axios from "axios";
 import React, { useState } from "react";
-
+import { Link, useNavigate } from "react-router-dom";
 const Register = () => {
-  const [name, setName] = useState("");
+  const   navigate = useNavigate();
+  const [username, setUsername] = useState("");
   const [city, setCity] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
-  const [dealerID, setDealerID] = useState(generateDealerID());
+  const [dealerId, setDealerId] = useState(generateDealerID());
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -16,7 +20,7 @@ const Register = () => {
     return Math.random().toString(36).substring(2, 12).toUpperCase();
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
@@ -27,18 +31,36 @@ const Register = () => {
       return;
     }
 
-    const userData = { name, city, password, dealerID };
+    const userData = { username, city, password, dealerId, phone, email };
     console.log(userData);
+    
+    try {
+       const res = await axios.post("/api/v1/auth/register", userData);
+       setMessage(res.data.message);
+       setUsername("");
+       setCity("");
+       setPassword("");
+       setConfirmPass("");
+       setPhone("");
+       setEmail("");
+       setDealerId(generateDealerID()); // Generate new ID for next user
+       setTimeout(()=>{
+        navigate("/login");
+       }, 1000)
+    } catch (error) {
+      setMessage(error.response?.data?.error || "Registration failed");
+    }
 
-    setTimeout(() => {
-      setMessage("User registered successfully!");
-      setName("");
-      setCity("");
-      setPassword("");
-      setConfirmPass("");
-      setDealerID(generateDealerID()); // Generate new ID for next user
-      setLoading(false);
-    }, 1000);
+    // setTimeout(() => {
+    //   setMessage("User registered successfully!");
+    //   setName("");
+    //   setCity("");
+    //   setPassword("");
+    //   setConfirmPass("");
+    //   setDealerID(generateDealerID()); // Generate new ID for next user
+    //   setLoading(false);
+    // }, 1000);
+    setLoading(false);
   };
 
   return (
@@ -50,14 +72,38 @@ const Register = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block font-medium">Name:</label>
+            <label className="block font-medium">Username:</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               className="w-full p-2 border rounded"
-              placeholder="Enter your name"
+              placeholder="Enter your username"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium">Email:</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full p-2 border rounded"
+              placeholder="Enter your email"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium">Phone:</label>
+            <input
+              type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+              className="w-full p-2 border rounded"
+              placeholder="Enter your phone number"
             />
           </div>
 
@@ -77,7 +123,7 @@ const Register = () => {
             <label className="block font-medium">Dealer ID:</label>
             <input
               type="text"
-              value={dealerID}
+              value={dealerId}
               readOnly
               className="w-full p-2 border rounded bg-gray-100"
             />

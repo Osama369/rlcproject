@@ -1,34 +1,43 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Login = () => {
-  const [userID, setUserID] = useState("");
+  const [dealerId, setDealerId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  const navigate = useNavigate(); // Hook for navigation
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
 
-    if (!userID || !password) {
+    if (!dealerId || !password) {
       setMessage("Both fields are required!");
       setLoading(false);
       return;
     }
 
-    const loginData = { userID, password };
-    console.log(loginData);
+    const loginData = { dealerId, password };
 
     try {
-      // Example API call
-      // const response = await axios.post("http://localhost:5000/api/users/login", loginData);
-      // setMessage("Login successful!");
-      setUserID("");
-      setPassword("");
+      const response = await axios.post("/api/v1/auth/user-login", loginData);
+      
+      // Save JWT token in localStorage
+      localStorage.setItem("token", response.data.token);
+
+      setMessage("Login successful!");
+
+      // Redirect to the home page after 1 second
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
     } catch (error) {
-      setMessage("Error: " + (error.response?.data?.message || "Invalid credentials"));
+      setMessage(error.response?.data?.error || "Invalid credentials");
     } finally {
       setLoading(false);
     }
@@ -43,14 +52,14 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block font-medium">User ID:</label>
+            <label className="block font-medium">Dealer ID:</label>
             <input
               type="text"
-              value={userID}
-              onChange={(e) => setUserID(e.target.value)}
+              value={dealerId}
+              onChange={(e) => setDealerId(e.target.value)}
               required
               className="w-full p-2 border rounded"
-              placeholder="Enter your User ID"
+              placeholder="Enter your Dealer ID"
             />
           </div>
 
