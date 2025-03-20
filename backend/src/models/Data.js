@@ -18,7 +18,7 @@ const dataSchema = new mongoose.Schema({
     data: [
         {
             uniqueId: {
-                type: Number,
+                type: BigInt,
                 required: true,
             },
             firstPrice: {

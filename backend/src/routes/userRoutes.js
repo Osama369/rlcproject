@@ -15,10 +15,10 @@ import {
 } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
-
+// users routes 
 router.get("/", authMiddleware, adminMiddleware, getAllUsers);
 router.post("/create-user", authMiddleware, adminMiddleware, createUser);
-router.get("/:id", authMiddleware, adminMiddleware, getUserById);
+router.get("/:id", authMiddleware, getUserById);
 router.patch("/:id", authMiddleware, adminMiddleware, updateUser);
 router.delete("/:id", authMiddleware, adminMiddleware, deleteUser);
 router.patch(

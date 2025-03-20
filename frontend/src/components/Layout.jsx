@@ -1,8 +1,32 @@
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import {
+  FaUser,
+  FaClock,
+  FaCalendarAlt,
+  FaFileUpload,
+  FaPrint,
+  FaTrash,
+  FaCheckSquare,
+  FaBook,
+  FaCalculator,
+  FaInbox,
+  FaDice,
+  FaMagic,
+  FaCity,
+  FaBalanceScale,
+  FaUserTie,
+  FaRing,
+  FaCog,
+  FaCheckCircle,
+  FaArrowUp,
+  FaEye,
+  FaStar, FaMoon,
+
+} from 'react-icons/fa';
 const Layout = () => {
   // Hooks to manage states of the variables
   // State for ledger selection, date, and draw time
@@ -23,58 +47,59 @@ const Layout = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [file, setFile] = useState(null);
+  
   // State for storing permutations
   const [permutations, setPermutations] = useState([]);  // we will set permutation in the table entreis
 
- // fetch the user data
+  // fetch the user data
 
- useEffect(() => {
-  const fetchUserData = async () => {
-    try {
-      const token = localStorage.getItem("token");
-     // console.log(token);
-      
-      if (!token) {
-        navigate("/login");
-        return;
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        // console.log(token);
+
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+
+        // Decode token to get user ID
+        const decodedToken = JSON.parse(atob(token.split(".")[1]));
+        const userId = decodedToken.id;
+        //  console.log(userId);
+
+        const response = await axios.get(`/api/v1/users/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log("User data received:", response.data);
+
+        setUser(response.data);
+      } catch (error) {
+        setError("Failed to load user data");
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // Decode token to get user ID
-      const decodedToken = JSON.parse(atob(token.split(".")[1]));
-      const userId = decodedToken.id;
-      //  console.log(userId);
-       
-      const response = await axios.get(`/api/v1/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log("User data received:", response.data);
+    fetchUserData();
+  }, [navigate]);
 
-      setUser(response.data);
-    } catch (error) {
-      setError("Failed to load user data");
-      console.error(error);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    // Calculate closing time (9 minutes before the next hour)
+    const [hour, period] = drawTime.split(" ");
+    let closingHour = parseInt(hour);
+    let closingPeriod = period;
+    if (closingHour === 12) {
+      closingPeriod = period === "AM" ? "PM" : "AM";
+    } else {
+      closingHour = closingHour + 1;
     }
-  };
-
-  fetchUserData();
-}, [navigate]);
-
-useEffect(() => {
-  // Calculate closing time (9 minutes before the next hour)
-  const [hour, period] = drawTime.split(" ");
-  let closingHour = parseInt(hour);
-  let closingPeriod = period;
-  if (closingHour === 12) {
-    closingPeriod = period === "AM" ? "PM" : "AM";
-  } else {
-    closingHour = closingHour + 1;
-  }
-  setClosingTime(`${closingHour === 12 ? 12 : closingHour}:${"51"} ${closingPeriod}`);
-}, [drawTime]);
+    setClosingTime(`${closingHour === 12 ? 12 : closingHour}:${"51"} ${closingPeriod}`);
+  }, [drawTime]);
 
   // Update current time every minute
   useEffect(() => {
@@ -84,13 +109,13 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, []);
 
-if (loading) {
-  return <p className="text-center text-lg">Loading...</p>;
-}
+  if (loading) {
+    return <p className="text-center text-lg">Loading...</p>;
+  }
 
-if (error) {
-  return <p className="text-center text-red-600">{error}</p>;
-}
+  if (error) {
+    return <p className="text-center text-red-600">{error}</p>;
+  }
 
 
   const handleFileChange = (event) => {
@@ -451,130 +476,236 @@ if (error) {
 
 
   return (
-    <div className="flex h-screen min-h-[820px] bg-gray-200 overflow-hidden">
+    <div className="flex h-screen min-h-[500px] bg-gray-900 text-gray-100 overflow-hidden">
+
       {/* Sidebar */}
-      <div className="w-64 bg-blue-800 text-white flex flex-col p-5">
-        <div className="text-2xl font-bold mb-6">Dealer Portal</div>
-        <nav className="flex flex-col space-y-4">
-          <a href="/" className="px-3 py-2 rounded-md hover:bg-blue-700">Book</a>
-          <a href="#" className="px-3 py-2 rounded-md hover:bg-blue-700">Hisab</a>
-          <a href="#" className="px-3 py-2 rounded-md hover:bg-blue-700">Voucher Inbox</a>
+      <div className="w-64 bg-gray-800 flex flex-col p-5 border-r border-gray-700">
+        <div className="text-2xl font-bold mb-6 flex items-center gap-2 text-purple-400">
+          <FaDice className="text-3xl" />
+          <span>Dealer Portal</span>
+        </div>
+        <nav className="flex flex-col space-y-3">
+          <a href="/" className="flex items-center px-3 py-2.5 rounded-md hover:bg-gray-700 gap-2 transition-colors">
+            <FaBook className="text-purple-400" />
+            Book
+          </a>
+          <a href="#" className="flex items-center px-3 py-2.5 rounded-md hover:bg-gray-700 gap-2 transition-colors">
+            <FaCalculator className="text-blue-400" />
+            Hisab
+          </a>
+          <a href="#" className="flex items-center px-3 py-2.5 rounded-md hover:bg-gray-700 gap-2 transition-colors">
+            <FaInbox className="text-green-400" />
+            Voucher Inbox
+          </a>
         </nav>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col p-6 ">
+      <div className="flex-1 flex flex-col p-6 overflow-y-auto ">
         {/* Header */}
-        <header className="bg-purple-700 text-white p-4 rounded-md grid grid-cols-3 gap-4 items-center">
-        <div className="flex flex-col space-y-2 p-4">
-      <div className="text-lg font-semibold">
-        Name: <input type="text" value={user.username} className="bg-white text-black px-2 py-1 rounded" readOnly />
-      </div>
-      <div className="text-lg font-semibold">
-        City: <input type="text" value={user.city} className="bg-white text-black px-2 py-1 rounded" readOnly />
-      </div>
-      <div className="text-lg font-semibold">
-        Dealer ID: <input type="text" value={user.dealerId} className="bg-white text-black px-2 py-1 rounded" readOnly />
-      </div>
-      <div className="text-lg font-semibold">
-        Balance: <input type="text" value={user.balance || "0.00"} className="bg-white text-black px-2 py-1 rounded" readOnly />
-      </div>
-    </div>
+        <header className="bg-gray-800 p-4 rounded-xl grid grid-cols-1 lg:grid-cols-2 gap-3 items-start mb-6 border border-gray-700">
+          <div className="flex flex-col space-y-4 p-4">
+
+            <div className="flex items-center gap-2 text-lg">
+              <FaUserTie className="text-blue-400" />
+              <span className="font-semibold">Name:</span>
+              <input
+                type="text"
+                value={user.username}
+                className="bg-gray-700 text-gray-100 px-3 py-1.5 rounded-lg border border-gray-600 flex-1"
+                readOnly
+              />
+            </div>
+
+            <div className="flex items-center gap-2 text-lg">
+              <FaUserTie className="text-blue-400" />
+              <span className="font-semibold">ID:</span>
+              <input
+                type="text"
+                value={user.dealerId}
+                className="bg-gray-700 text-gray-100 px-3 py-1.5 rounded-lg border border-gray-600 flex-1"
+                readOnly
+              />
+
+            </div>
+
+            <div className="flex items-center gap-2 text-lg">
+              <FaCity className="text-blue-400" />
+              <span className="font-semibold">CITY:</span>
+              <input
+                type="text"
+                value={user.city}
+                className="bg-gray-700 text-gray-100 px-3 py-1.5 rounded-lg border border-gray-600 flex-1"
+                readOnly
+              />
+
+            </div>
+
+
+            <div className="flex items-center gap-2 text-lg">
+              <FaBalanceScale className="text-blue-400" />
+              <span className="font-semibold">BALANCE:</span>
+              <input
+                type="text"
+                value={user.balance}
+                className="bg-gray-700 text-gray-100 px-3 py-1.5 rounded-lg border border-gray-600 flex-1"
+                readOnly
+              />
+
+            </div>
+          </div>
+          {/* user info done here */}
 
           <div className="flex flex-col space-y-2">
             {/* Ledger dropdown */}
-            <div className="text-lg font-semibold">Ledger:
-              <select className="bg-white text-black px-2 py-1 rounded" value={ledger} onChange={(e) => setLedger(e.target.value)}>
+            <div className="text-lg font-semibold flex items-center space-x-2">
+              <span>Ledger:</span>
+              <select
+                className="bg-gray-700 text-gray-100 px-3 py-2 rounded-lg border border-gray-600 flex-1"
+                value={ledger}
+                onChange={(e) => setLedger(e.target.value)}
+              >
                 <option>LEDGER</option>
                 <option>DAILY BILL</option>
                 <option>VOUCHER</option>
               </select>
             </div>
 
-            <div className="text-lg font-semibold">Draw Name:
+            {/* Draw Name Dropdown */}
+            <div className="text-lg font-semibold flex items-center space-x-2">
+              <FaClock className="text-purple-400" />
+              <span>Draw Name:</span>
               <select
-                className="bg-white text-black px-2 py-1 rounded"
+                className="bg-gray-700 text-white px-2 py-1 rounded"
                 value={drawTime}
                 onChange={(e) => setDrawTime(e.target.value)}
               >
-                {[...Array(13)].map((_, i) => {  // Increase range to 13 to include 11 PM
+                {[...Array(13)].map((_, i) => {
                   const hour = 11 + i;
                   const period = hour >= 12 ? "PM" : "AM";
                   const formattedHour = hour > 12 ? hour - 12 : hour;
                   const time = `${formattedHour === 0 ? 12 : formattedHour} ${period}`;
-                  return <option key={time} value={time}>{time}</option>;
+                  return (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  );
                 })}
               </select>
             </div>
 
-            <div className="text-lg font-semibold">Draw Date:
-              <input type="date" className="bg-white text-black px-2 py-1 rounded" value={drawDate} onChange={(e) => setDrawDate(e.target.value)} />
+            {/* Draw Date Input */}
+            <div className="text-lg font-semibold flex items-center space-x-2">
+              <FaCalendarAlt className="text-purple-400" />
+              <span>Draw Date:</span>
+              <input
+                type="date"
+                className="bg-gray-400 text-white px-2 py-1 rounded"
+                value={drawDate}
+                onChange={(e) => setDrawDate(e.target.value)}
+              />
             </div>
+
             {/* Print Button */}
-            <button className="px-4 py-2 bg-green-600 text-white rounded-md" onClick={handleDownloadPDF}>Print</button>
+            <button
+              className="flex items-center  space-x-2 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-500 transition"
+              onClick={handleDownloadPDF}
+            >
+              <FaPrint />
+              <span >Print</span>
+            </button>
           </div>
+          {/* ledger voucher bill print end here */}
 
           {/* Draw Time Section */}
-          <div className="mt-6 p-4 bg-white rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4 text-black">Draw Time Selection</h2>
+          <div className=" p-4 bg-gray-800 rounded-lg  border border-gray-900 text-white">
+            <h2 className="text-xl font-semibold mb-4 flex items-center space-x-2">
+              <FaClock className="text-purple-400" />
+              <span>Draw Time Selection</span>
+            </h2>
 
             {/* Time Dropdown */}
             <div className="mb-4">
-              <label className="block text-lg font-semibold mb-2 text-black">Select Draw Time:</label>
+              <label className="flex text-lg font-semibold mb-2 flex items-center space-x-2">
+                <FaClock className="text-purple-400" />
+                <span>Select Draw Time:</span>
+              </label>
               <select
-                className="bg-white text-black px-2 py-1 rounded"
+                className="bg-gray-700 text-white px-3 py-2 rounded w-full border border-gray-600"
                 value={drawTime}
                 onChange={(e) => setDrawTime(e.target.value)}
               >
-                {[...Array(13)].map((_, i) => {  // Increase range to 13 to include 11 PM
+                {[...Array(13)].map((_, i) => {
                   const hour = 11 + i;
                   const period = hour >= 12 ? "PM" : "AM";
                   const formattedHour = hour > 12 ? hour - 12 : hour;
                   const time = `${formattedHour === 0 ? 12 : formattedHour} ${period}`;
-                  return <option
-                    key={time}
-                    value={time}
-                    disabled={isPastClosingTime(time)}
-                    style={{ backgroundColor: isPastClosingTime(time) ? "red" : "white", color: isPastClosingTime(time) ? "white" : "black" }}
-                  >
-                    {time} {isPastClosingTime(time) ? "(Closed)" : ""}
-                  </option>;
+                  return (
+                    <option
+                      key={time}
+                      value={time}
+                      disabled={isPastClosingTime(time)}
+                      className={`${isPastClosingTime(time) ? "bg-red-500 text-white" : "bg-gray-700 text-white"
+                        }`}
+                    >
+                      {time} {isPastClosingTime(time) ? "(Closed)" : ""}
+                    </option>
+                  );
                 })}
               </select>
-
             </div>
 
-            <p className='text-black'><strong>Today Date:</strong> {new Date().toLocaleDateString()} ({new Date().toLocaleString('en-us', { weekday: 'long' })})</p>
+            {/* Today Date */}
+            <p className="text-white flex items-center space-x-2">
+              <FaCalendarAlt className="text-purple-400" />
+              <span>
+                <strong>Today Date:</strong> {new Date().toLocaleDateString()} (
+                {new Date().toLocaleString("en-us", { weekday: "long" })})
+              </span>
+            </p>
 
             {/* Closing Time Calculation */}
-            <p className='text-black'><strong>Closing Time:</strong> {
-              (() => {
-                const [hour, period] = drawTime.split(" ");
-                let closingHour = parseInt(hour, 10);
-                if (period === "PM" && closingHour !== 12) closingHour += 12;
-                const closingTime = new Date();
-                closingTime.setHours(closingHour - 1, 51, 0); // 9 minutes before the next draw
-                return closingTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-              })()
-            }</p>
+            <p className="text-white flex items-center space-x-2 mt-2">
+              <FaClock className="text-purple-400" />
+              <span>
+                <strong>Closing Time:</strong>{" "}
+                {(() => {
+                  const [hour, period] = drawTime.split(" ");
+                  let closingHour = parseInt(hour, 10);
+                  if (period === "PM" && closingHour !== 12) closingHour += 12;
+                  const closingTime = new Date();
+                  closingTime.setHours(closingHour - 1, 51, 0);
+                  return closingTime.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  });
+                })()}
+              </span>
+            </p>
           </div>
 
+          <div  className='bg-gray-800 rounded-xl p-4 border border-gray-900' >
+              Draw numbers
+          </div>
 
         </header>
         {/* // header end */}
 
+
         {/* Body Content */}
-        <div className="grid grid-cols-2 gap-6 mt-6">
+        <div className="grid grid-cols-2 gap-6 mt-6 ">
 
           {/* Table Content */}
-          <div className='bg-white min-h-[500px] p-6 rounded-lg shadow-md flex flex-col'>
-            <div className='flex space-x-4 mb-4'>
-              <button onClick={toggleSelectAll} className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500'>
-                {selectAll ? 'Deselect All' : 'Select All'}
+          <div className='bg-gray-800 border border-gray-700 min-h-[500px] p-6 rounded-lg shadow-md flex flex-col'>
+          <div className='flex space-x-4 mb-4'>
+              <button onClick={toggleSelectAll} className='bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-400 flex items-center gap-2'>
+                <FaCheckSquare /> {selectAll ? 'Deselect All' : 'Select All'}
               </button>
-              <button onClick={deleteSelected} className='bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500'>Delete Selected</button>
+              <button onClick={deleteSelected} className='bg-red-500 text-white px-4 py-2 rounded hover:bg-red-400 flex items-center gap-2'>
+                <FaTrash /> Delete Selected
+              </button>
               <button onClick={deleteAll} className='bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500'>Delete All</button>
-              {/* <span>count table entreis </span> */}
             </div>
             {/* // displaying in the tabke  */}
             <div className='max-h-60 border rounded-md overflow-y-auto'>
@@ -652,69 +783,85 @@ if (error) {
 
 
 
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="flex space-x-4 mb-4">
-              <div>
-                {/* Hidden file input */}
-                <input
-                  type="file"
-                  className=""
-                  id="fileInput"
-                  onChange={handleFileChange}
-                />
+          <div className="bg-gray-800 border border-gray-700 p-6 rounded-lg shadow-md text-white">
+      <div className="flex space-x-4 mb-4">
+        <div>
+          {/* Hidden file input */}
+          <input type="file" className="hidden" id="fileInput" onChange={handleFileChange} />
 
-                {/* Styled "Choose File" Button
-      <label htmlFor="fileInput">
-        <button id='fileInput' className="bg-blue-600 text-white px-4 py-2 rounded  hover:bg-blue-500">
-          Choose File
+          {/* Upload Button */}
+          <label htmlFor="fileInput" className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-400 cursor-pointer">
+            <FaFileUpload />
+            <span>Choose File</span>
+          </label>
+
+          <button onClick={handleUpload} className="flex items-center space-x-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-400 mt-2">
+            <FaArrowUp />
+            <span>Upload Sheet</span>
+          </button>
+        </div>
+        <button className="flex items-center space-x-2 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-400">
+          <FaEye />
+          <span>View Sheet</span>
         </button>
-      </label> */}
-
-                {/* Display selected file name */}
-                {file && <p className="text-gray-700">Selected: {file.name}</p>}
-
-                {/* Upload Button */}
-                <button
-                  onClick={handleUpload}
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500"
-                >
-                  Upload Sheet
-                </button>
-              </div>
-              <button className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-500">View Sheet</button>
-            </div>
-            {/* // keeps buttons here */}
-            <div className="flex gap-4 pt-4">
-
-              <div className="w-1/2">
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2" onClick={handleChakriRing}>Chakri Ring</button>
-
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2" onClick={handleChakriRingBack}>Back Ring</button>
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2" onClick={handleChakriRingCross}>Cross Ring</button>
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2" onClick={handleChakriRingDouble}>Double Cross</button>
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2" onClick={handle5FiguresRing}>5 Figure Ring</button>
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2" onClick={handle6FigureRing}>6 Figure Ring</button>
-              </div>
-
-              {/* Right Column */}
-              <div className="w-1/2">
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2" onClick={handle4FiguresRing}>4 Figure Ring</button>
-
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2">2 figure AKR</button>
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2">4 figure AKR</button>
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2">5 figure AKR</button>
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2">6 figure AKR</button>
-                <button className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-400 m-2">Ring + AKR</button>
-              </div>
-            </div>
-
-          </div>
+      </div>
+      {/* Buttons Section */}
+      <div className="flex gap-4 pt-4">
+        {/* Left Column */}
+        <div className="w-1/2">
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRing}>
+            <FaStar /> <span>Chakri Ring</span>
+          </button>
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRingBack}>
+            <FaStar /> <span>Back Ring</span>
+          </button>
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRingCross}>
+            <FaStar /> <span>Cross Ring</span>
+          </button>
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRingDouble}>
+            <FaStar /> <span>Double Cross</span>
+          </button>
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handle5FiguresRing}>
+            <FaStar /> <span>5 Figure Ring</span>
+          </button>
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handle6FigureRing}>
+            <FaStar /> <span>6 Figure Ring</span>
+          </button>
+        </div>
+        {/* Right Column */}
+        <div className="w-1/2">
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handle4FiguresRing}>
+            <FaStar /> <span>4 Figure Ring</span>
+          </button>
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2">
+            <FaMoon /> <span>2 Figure AKR</span>
+          </button>
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2">
+            <FaMoon /> <span>4 Figure AKR</span>
+          </button>
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2">
+            <FaMoon /> <span>5 Figure AKR</span>
+          </button>
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2">
+            <FaMoon /> <span>6 Figure AKR</span>
+          </button>
+          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2">
+            <FaMoon /> <span>Ring + AKR</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
         </div>
+          {/* this is grid of two cols of table and buttons */}
+      </div>  
+      {/* this is the end of center content */}
 
-      </div>
+
     </div>
   );
 };
 
 export default Layout;
+
+
