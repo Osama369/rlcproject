@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 import jsPDF from "jspdf";
+import { useSelector, useDispatch } from "react-redux";
+import { showLoading , hideLoading } from '../redux/features/alertSlice';
+import { setUser } from '../redux/features/userSlice';
 import "jspdf-autotable";
 import {
   FaUser,
@@ -30,11 +33,15 @@ import {
 const Layout = () => {
   // Hooks to manage states of the variables
   // State for ledger selection, date, and draw time
-  const [user, setUser] = useState(null);
+  //const [user, setUser] = useState(null);
+  // using the redux slice reducer
+  
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-
+  const userData = useSelector((state) => state.user);
+  console.log(userData);
 
   const [ledger, setLedger] = useState("LEDGER");
   const [drawTime, setDrawTime] = useState("11 AM");
@@ -54,40 +61,47 @@ const Layout = () => {
   // fetch the user data
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        // console.log(token);
-
-        if (!token) {
-          navigate("/login");
-          return;
+    ;(
+      async () => {
+        
+        try {
+          const token = localStorage.getItem("token");
+          // console.log(token);
+  
+          if (!token) {
+            navigate("/login");
+            
+            return;
+          }
+         
+          // Decode token to get user ID
+          const decodedToken = JSON.parse(atob(token.split(".")[1]));
+          const userId = decodedToken.id;
+           console.log(userId);
+  
+          const response = await axios.get(`/api/v1/users/${userId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          dispatch(setUser(response.data));
+          console.log("User data received:", response.data);
+  
+          //setUser(response.data);
+        } catch (error) {
+          setError("Failed to load user data");
+          console.error(error);
+        } finally {
+          setLoading(false);
         }
-
-        // Decode token to get user ID
-        const decodedToken = JSON.parse(atob(token.split(".")[1]));
-        const userId = decodedToken.id;
-        //  console.log(userId);
-
-        const response = await axios.get(`/api/v1/users/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        console.log("User data received:", response.data);
-
-        setUser(response.data);
-      } catch (error) {
-        setError("Failed to load user data");
-        console.error(error);
-      } finally {
-        setLoading(false);
       }
-    };
+    )();
 
-    fetchUserData();
-  }, [navigate]);
-
+  }, [dispatch,navigate]);  // not optimized code 
+  
+  
+  
+  
   useEffect(() => {
     // Calculate closing time (9 minutes before the next hour)
     const [hour, period] = drawTime.split(" ");
@@ -152,6 +166,8 @@ const Layout = () => {
     return results;
   };
 
+
+  
   // Function to get combinations of a certain length (for 4 figures Ring 24)
   const getCombinations = (str, length) => {
     if (length === 1) return str.split("");
@@ -471,8 +487,7 @@ const Layout = () => {
     setSelectAll(!selectAll);
     setEntries(entries.map(entry => ({ ...entry, selected: !selectAll })));
   };
-
-
+  
 
 
   return (
@@ -509,9 +524,10 @@ const Layout = () => {
             <div className="flex items-center gap-2 text-lg">
               <FaUserTie className="text-blue-400" />
               <span className="font-semibold">Name:</span>
+             
               <input
                 type="text"
-                value={user.username}
+                value={userData?.user.username}
                 className="bg-gray-700 text-gray-100 px-3 py-1.5 rounded-lg border border-gray-600 flex-1"
                 readOnly
               />
@@ -522,7 +538,7 @@ const Layout = () => {
               <span className="font-semibold">ID:</span>
               <input
                 type="text"
-                value={user.dealerId}
+                value={userData?.user.dealerId}
                 className="bg-gray-700 text-gray-100 px-3 py-1.5 rounded-lg border border-gray-600 flex-1"
                 readOnly
               />
@@ -534,7 +550,7 @@ const Layout = () => {
               <span className="font-semibold">CITY:</span>
               <input
                 type="text"
-                value={user.city}
+                value={userData?.user?.city}
                 className="bg-gray-700 text-gray-100 px-3 py-1.5 rounded-lg border border-gray-600 flex-1"
                 readOnly
               />
@@ -547,7 +563,7 @@ const Layout = () => {
               <span className="font-semibold">BALANCE:</span>
               <input
                 type="text"
-                value={user.balance}
+                value={userData?.user?.balance}
                 className="bg-gray-700 text-gray-100 px-3 py-1.5 rounded-lg border border-gray-600 flex-1"
                 readOnly
               />

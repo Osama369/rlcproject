@@ -8,28 +8,55 @@ import Register from './pages/Register';
 import Dashboard from './pages/admin/Dashboard';
 import AdminLayout from './pages/admin/AdminLayout';
 import ManageUsers from './pages/admin/ManageUsers';
+import { useSelector } from 'react-redux';
+import Spinner from './components/Spinner';
+import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
 
 // this is the routing setup 
 function App() {
+  const { loading } = useSelector(state => state.alertSlice)
   return (
-    <BrowserRouter>
-      <Routes>
-         {/* homepage will be protected route  */}
-        <Route path="/" element={<Homepage />} />
-          
-          {/* public routes */}
-         <Route path='login' element={<Login/>}></Route>
-         <Route path='register' element={<Register/>}></Route>
 
-         {/* admin routes */}
-         <Route path="/admin" element={<AdminLayout />}>
+    <BrowserRouter>
+      {loading ? (<Spinner />) : (<Routes>
+        {/* homepage will be protected route  */}
+        <Route path="/" element={
+          <ProtectedRoute>
+            <Homepage />
+          </ProtectedRoute>
+
+        }
+        />
+
+
+        {/* public routes */}
+        <Route path='login' element={
+           <PublicRoute>
+            <Login />
+           </PublicRoute>
+
+          }></Route>
+
+        <Route path='register' element={
+           
+           <PublicRoute>
+             <Register />
+           </PublicRoute>
+
+          }></Route>
+
+        {/* admin routes */}
+        <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="manage-users" element={<ManageUsers />} />
         </Route>
 
-        
-      </Routes>
+
+      </Routes>)}
+
     </BrowserRouter>
+
   );
 }
 
