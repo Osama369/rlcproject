@@ -14,6 +14,4 @@ dataRouter.get("/get-data", authMiddleware, getDataForDate);
 dataRouter.get("/get-all-documents",  getAllDocuments);
 dataRouter.delete("/delete-data/:id",  deleteDataObjectById);
 
-// dataRouter.get('/get-data/:id', authMiddleware, getDataById);
-
 export default dataRouter;
