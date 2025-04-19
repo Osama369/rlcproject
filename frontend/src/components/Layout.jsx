@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { data, useNavigate } from 'react-router-dom';
 import axios from "axios";
 import jsPDF from "jspdf";
 import { useSelector, useDispatch } from "react-redux";
-import { showLoading , hideLoading } from '../redux/features/alertSlice';
+import { showLoading, hideLoading } from '../redux/features/alertSlice';
 import { setUser } from '../redux/features/userSlice';
+// import { setData } from '../redux/features/dataSlice';
+
+import Spinner from '../components/Spinner'
 import "jspdf-autotable";
 import {
   FaUser,
@@ -35,17 +38,19 @@ const Layout = () => {
   // State for ledger selection, date, and draw time
   //const [user, setUser] = useState(null);
   // using the redux slice reducer
-  
+
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const userData = useSelector((state) => state.user);
-  console.log(userData);
+  const token = userData?.token || localStorage.getItem("token");
+  // console.log(token);
+
 
   const [ledger, setLedger] = useState("LEDGER");
-  const [drawTime, setDrawTime] = useState("11 AM");
-  const [drawDate, setDrawDate] = useState(new Date().toISOString().split('T')[0]);
+  const [drawTime, setDrawTime] = useState("11 AM");  // time slot
+  const [drawDate, setDrawDate] = useState(new Date().toISOString().split('T')[0]); // date
   const [closingTime, setClosingTime] = useState("");
   const [entries, setEntries] = useState([]);  // table entries
   const [no, setNo] = useState('');
@@ -54,39 +59,43 @@ const Layout = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [file, setFile] = useState(null);
-  
+  // const [newId, setNewId] = useState(null); // 👈 new state to track latest data _id
+
   // State for storing permutations
   const [permutations, setPermutations] = useState([]);  // we will set permutation in the table entreis
 
-  // fetch the user data
-
   useEffect(() => {
-    ;(
+    if (drawDate && drawTime) {
+      getAndSetVoucherData();
+    }
+  }, [drawDate, drawTime]);
+
+  // get the user data profile
+  useEffect(() => {
+    ; (
       async () => {
-        
+
         try {
           const token = localStorage.getItem("token");
           // console.log(token);
-  
+
           if (!token) {
             navigate("/login");
-            
+
             return;
           }
-         
+
           // Decode token to get user ID
           const decodedToken = JSON.parse(atob(token.split(".")[1]));
           const userId = decodedToken.id;
-           console.log(userId);
-  
+          // console.log(userId);
+
           const response = await axios.get(`/api/v1/users/${userId}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           });
           dispatch(setUser(response.data));
-          console.log("User data received:", response.data);
-  
           //setUser(response.data);
         } catch (error) {
           setError("Failed to load user data");
@@ -97,11 +106,76 @@ const Layout = () => {
       }
     )();
 
-  }, [dispatch,navigate]);  // not optimized code 
+  }, [dispatch, navigate]);
+
+
+
+
+
+  //  get the data from the backend on specific date and time slot
+
+  const fetchVoucherData = async (selectedDate, selectedTimeSlot) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await axios.get("/api/v1/data/get-data", {
+        params: {
+          date: selectedDate,
+          timeSlot: selectedTimeSlot,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log(response);
+
+
+      return response.data.data;
+    } catch (error) {
+      alert("Error fetching data: " + (error.response?.data?.error || error.message));
+      return [];
+    }
+  };
+
+  const getAndSetVoucherData = async () => {  // use in to fetch data base on time/date
+    const fetchedData = await fetchVoucherData(drawDate, drawTime);
+
+    if (Array.isArray(fetchedData) && fetchedData.length > 0) {
+      const filteredRecords = fetchedData.filter((record) => {
+        const recordDate = new Date(record.date).toISOString().split("T")[0];
+        const selectedDateISO = new Date(drawDate).toISOString().split("T")[0];
+        return (
+          recordDate === selectedDateISO &&
+          record.timeSlot === drawTime
+        );
+      });
+
+      const combinedEntries = filteredRecords.flatMap((record) =>
+        record.data.map((item, index) => ({
+          id: index + 1, // creates a unique-enough ID without needing global index
+          no: item.uniqueId,
+          f: item.firstPrice,
+          s: item.secondPrice,
+          selected: false,
+        }))
+      );
+
+      setEntries(combinedEntries);
+    } else {
+      setEntries([]);
+    }
+  };
+
+    
+  // delete handler the record based on id 
   
+
+
   
-  
-  
+
+
+
   useEffect(() => {
     // Calculate closing time (9 minutes before the next hour)
     const [hour, period] = drawTime.split(" ");
@@ -123,13 +197,14 @@ const Layout = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) {
-    return <p className="text-center text-lg">Loading...</p>;
+  if (loading) {  // this is loading that is running in seprately 
+    return <p className="text-center text-lg"><Spinner /></p>;
   }
 
   if (error) {
     return <p className="text-center text-red-600">{error}</p>;
   }
+
 
 
   const handleFileChange = (event) => {
@@ -167,7 +242,6 @@ const Layout = () => {
   };
 
 
-  
   // Function to get combinations of a certain length (for 4 figures Ring 24)
   const getCombinations = (str, length) => {
     if (length === 1) return str.split("");
@@ -233,6 +307,7 @@ const Layout = () => {
     return Array.from(new Set(allPermutations)).sort((a, b) => a[0].localeCompare(b[0]));
   };
 
+  // 6 digit ring 
   const handle6FigureRing = () => {
     if (no.length < 6) {
       console.log("plz enter the ast leat 6 digits");
@@ -244,16 +319,17 @@ const Layout = () => {
 
 
     const updatedEntries = result.map((perm, index) => ({
-      id: index + 1,
+      id: entries.length + index + 1,
       no: perm,
       f: f,
       s: s,
       selected: false,
     }));
 
-    setEntries(updatedEntries);
+    setEntries((prevEntries) => [...prevEntries, ...updatedEntries]);
   }
 
+  // 5 digit ring 
   const handle5FiguresRing = () => {
     if (no.length < 5) {
       console.log("plz enete the at least 5 digit");
@@ -264,18 +340,17 @@ const Layout = () => {
     console.log(result);
 
     const updatedEntries = result.map((perm, index) => ({
-      id: index + 1,
+      id: entries.length + index + 1,
       no: perm,
       f: f,
       s: s,
       selected: false,
     }));
 
-    setEntries(updatedEntries);
-
+    setEntries((prevEntries) => [...prevEntries, ...updatedEntries]);
   }
 
-  // Handle button click
+  // 4 digit ring 
   const handle4FiguresRing = () => {
     if (no.length < 4) {
       console.log("Please enter at least a 4-digit number.");
@@ -288,7 +363,7 @@ const Layout = () => {
 
     // Update entries state with new permutations
     const updatedEntries = result.map((perm, index) => ({
-      id: index + 1,
+      id: entries.length + index + 1,
       no: perm,
       f: f,
       s: s,
@@ -296,48 +371,53 @@ const Layout = () => {
     }));
 
 
-    setEntries(updatedEntries);
+    setEntries((prevEntries) => [...prevEntries, ...updatedEntries]);
   };
 
 
 
-  // Handle Chakri Ring button click
   const handleChakriRing = () => {
     if (no && f && s) {
-      const generatedPermutations = getPermutations(no);
-      // Update entries with permutations
+      const generatedPermutations = getPermutations(no);  // Generates multiple numbers
+
+      // Create new entries for each permutation
       const updatedEntries = generatedPermutations.map((perm, index) => ({
-        id: index + 1,
+        id: entries.length + index + 1, // Ensure unique IDs
         no: perm,
-        f: f,  // Add relevant data
-        s: s,  // Add relevant data
+        f: f,
+        s: s,
         selected: false
       }));
+      console.log(updatedEntries);
 
-      setEntries(updatedEntries);
-      // setNo(''),
-      // setF(''),
-      // setS('')
+      // setEntries((prevEntries) => [...prevEntries, ...updatedEntries]);  // ✅ Append instead of replacing
+      // setTimeout (()=>{
+      //   addEntry();
+      // }, 0);
+      //  addEntry(); // Call addEntry with the new entries
+      addEntry(updatedEntries); // Pass the new entries to addEntry
     }
   };
+
 
   // Handle Chakri Back Ring button click
   const handleChakriRingBack = () => {
     if (no && f && s) {
       const generatedPermutations = getPermutations(no);
       const updatedEntriesback = generatedPermutations.map((perm, index) => ({
-        id: index + 1,
+        id: entries.length + index + 1,
         no: `x${perm}`, // Ensure both are strings
         f: f,
         s: s,
         selected: false
       }));
-      setEntries(updatedEntriesback);
+      // setEntries((prevEntries) => [...prevEntries, ...updatedEntriesback]);  // ✅ Append instead of replacing
       //  setNo(''),
       //  setF(''),
       //  setS('')
       //  console.log(updatedEntriesback);
       // set the fields empty
+      addEntry(updatedEntriesback); // Pass the new entries to addEntry
     }
   };
 
@@ -349,19 +429,20 @@ const Layout = () => {
         const modifiedPerm = perm.slice(0, 1) + "x" + perm.slice(1); // Insert "x" at the second position
 
         return {
-          id: index + 1,
-          no: modifiedPerm,
+          id: entries.length + index + 1,
+          no: modifiedPerm,  // 1x23
           f: f,
           s: s,
           selected: false
         };
       });
 
-      setEntries(updatedEntriescross);
+      // setEntries((prevEntries) => [...prevEntries, ...updatedEntriescross]);  // ✅ Append instead of replacing
       // setNo('');
       // setF('');
       // setS('');
       // console.log(updatedEntriescross);
+      addEntry(updatedEntriescross); // Pass the new entries to addEntry
     }
   };
 
@@ -373,76 +454,222 @@ const Layout = () => {
         const modifiedPerm = perm.slice(0, 2) + "x" + perm.slice(2); // Insert "x" at the second position
 
         return {
-          id: index + 1,
-          no: modifiedPerm,
+          id: entries.length + index + 1,
+          no: modifiedPerm,  // 12x3
           f: f,
           s: s,
           selected: false
         };
       });
 
-      setEntries(updatedEntriesdouble);
+      // setEntries((prevEntries) => [...prevEntries, ...updatedEntriesdouble]);
       // setNo('');
       // setF('');
       // setS('');
       // console.log(updatedEntriesdouble);
+      addEntry(updatedEntriesdouble); // Pass the new entries to addEntry
+    }
+  };
+
+  // function to AKR 2 figure 
+
+  const handleAKR2Figure = () => {
+    if (no.length !== 2 || !f || !s) {
+      console.log("Please enter a 2-digit number and prices.");
+      return;
+    }
+
+    const num = no.toString();
+    const generatedPatterns = [
+      num,       // "23"
+      `+${num}+`,   // "+23+"
+      `++${num}`, // "++23"
+      `${num[0]}+${num[1]}`, // "2+3"
+      `+${num[0]}+${num[1]}`, // "+2+3"
+      `${num[0]}++${num[1]}`  // "2++3"
+    ];
+
+    const updatedEntries = generatedPatterns.map((pattern, index) => ({
+      id: entries.length + index + 1,
+      no: pattern,
+      f: f,
+      s: s,
+      selected: false
+    }));
+
+    setEntries((prevEntries) => [...prevEntries, ...updatedEntries]);  // Append new entries
+  };
+
+  const handleAKR4Figure = () => {
+    if (no.length === 4 && f && s) {
+      // Step 1: Get all 2-letter combinations from 4-digit input
+      const combinations = getCombinations(no, 2);
+
+      // Step 2: Generate permutations for each combination
+      const pairs = combinations.flatMap(getPermutation);
+
+      // Step 3: Remove duplicates
+      const uniquePairs = [...new Set(pairs)];
+
+      // Step 4: Format and update entries
+      const formatted = uniquePairs.map((pair, index) => ({
+        id: entries.length + index + 1,
+        no: pair,
+        f: f,
+        s: s,
+        selected: false,
+      }));
+
+      setEntries((prev) => [...prev, ...formatted]);
+    } else {
+      alert("Please enter a valid 4-digit number and F/S values.");
+    }
+  };
+
+
+  const handleAKR5Figure = () => {
+    if (no.length === 5 && f && s) {
+      // Step 1: Get all 2-digit combinations
+      const combinations = getCombinations(no, 2);
+
+      // Step 2: Get all ordered permutations for those combinations
+      const pairs = combinations.flatMap(getPermutation);
+
+      // Step 3: Remove duplicates
+      const uniquePairs = [...new Set(pairs)];
+
+      // Step 4: Format for entries
+      const formatted = uniquePairs.map((pair, index) => ({
+        id: entries.length + index + 1,
+        no: pair,
+        f: f,
+        s: s,
+        selected: false,
+      }));
+
+      setEntries((prev) => [...prev, ...formatted]);
+    } else {
+      alert("Please enter a valid 5-digit number and F/S values.");
     }
   };
 
 
 
+  const handleAKR6Figure = () => {
+    if (no.length === 6 && f && s) {
+      // Step 1: Get all 2-digit combinations
+      const combinations = getCombinations(no, 2); // e.g. ["12", "13", "14", ...]
+
+      // Step 2: Get ordered permutations from those combinations
+      const orderedPairs = combinations.flatMap(getPermutation);
+
+      // Step 3: Filter out duplicates (like ["12", "21"] becomes both included, unless filtered)
+      const uniquePairs = [...new Set(orderedPairs)];
+
+      // Step 4: Format the entries for table display
+      const formatted = uniquePairs.map((pair, index) => ({
+        id: entries.length + index + 1,
+        no: pair,
+        f: f,
+        s: s,
+        selected: false,
+      }));
+
+      // Step 5: Add to entries
+      setEntries(prev => [...prev, ...formatted]);
+    } else {
+      alert("Please enter a valid 6-digit number and F/S values.");
+    }
+  };
+
+
+  const handleRingPlusAKR = () => {
+    if (no.length === 3 && f && s) {
+      const threeDigit = {
+        id: entries.length + 1,
+        no: no,
+        f: f,
+        s: s,
+        selected: false,
+      };
+
+      const twoDigit = {
+        id: entries.length + 2,
+        no: no.slice(0, 2),
+        f: f,
+        s: s,
+        selected: false,
+      };
+
+      setEntries(prev => [...prev, threeDigit, twoDigit]);
+    } else {
+      alert("Please enter exactly 3 digits and valid F/S values");
+    }
+  };
+
+
+
+
+
   // handleprint
   // Function to generate downloadable PDF
-  const handleDownloadPDF = () => {
-    if (ledger !== "VOUCHER" || entries.length === 0) {
-      alert("There is nothing to download or Ledger is not set to Voucher.");
+  const handleDownloadPDF = async () => {
+    if (ledger !== "VOUCHER") {
+      alert("Ledger must be set to VOUCHER.");
       return;
     }
 
-    const doc = new jsPDF("p", "mm", "a4"); // Portrait mode, millimeters, A4 size
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
+    const fetchedEntries = await fetchVoucherData(drawDate, drawTime); // <-- Pass drawTime now
+    if (fetchedEntries.length === 0) {
+      alert("No entries found for the selected date and time slot.");
+      return;
+    }
 
-    // Title and Dealer Details (Only on first page)
+    const doc = new jsPDF("p", "mm", "a4");
+    const pageWidth = doc.internal.pageSize.width;
+
     const addHeader = () => {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.text("Voucher Sheet", pageWidth / 2, 15, { align: "center" });
 
       doc.setFontSize(12);
-      doc.text(`Dealer Name: Sohail`, 14, 30);
-      doc.text(`City: Karachi`, 14, 40);
+      doc.text(`Dealer Name: ${userData?.user.username}`, 14, 30);  // You can make this dynamic
+      doc.text(`City: Karachi ${userData?.user.city}`, 14, 40);
       doc.text(`Draw Date: ${drawDate}`, 14, 50);
       doc.text(`Draw Time: ${drawTime}`, 14, 60);
     };
 
-    addHeader(); // Add header to the first page
+    addHeader();
 
-    let startY = 70; // Start table below details
-
+    // Merge all entries for the selected time slot
+    const allVoucherRows = fetchedEntries
+      .filter(entry => entry.timeSlot === drawTime)
+      .flatMap(entry => entry.data.map(item => [
+        item.uniqueId,
+        item.firstPrice,
+        item.secondPrice
+      ]));
+    // it work fine!
     doc.autoTable({
-      startY: startY,
+      startY: 70,
       head: [["Num", "F", "S"]],
-      body: entries.map(entry => [entry.no, entry.f, entry.s]),
+      body: allVoucherRows,
       theme: "grid",
       headStyles: { fillColor: [0, 0, 255] },
       styles: { align: "center", fontSize: 12 },
       margin: { left: 14 },
       didDrawPage: function (data) {
         if (data.pageNumber > 1) {
-          addHeader(); // Add header on new pages
+          // addHeader();
           doc.setFontSize(14);
-          doc.text("Continued...", pageWidth / 2, 65, { align: "center" });
+          // doc.text("Continued...", pageWidth / 2, 65, { align: "center" });
         }
       },
     });
 
-    // Save PDF
     doc.save("Voucher_Sheet_RLC.pdf");
   };
-
-
-
 
 
 
@@ -464,16 +691,86 @@ const Layout = () => {
 
 
   // useEffect 
+  // consume the addDataForTimeSlot api
+  // setps
+  // Extract values (time slot, date, and data) from the state.
 
+  // Make an API request to send the data to the backend.
 
-  const addEntry = () => {
-    if (no && f && s) {
-      setEntries([...entries, { id: entries.length + 1, no, f, s, selected: false }]);
-      setNo('');
-      setF('');
-      setS('');
+  // Handle success or error responses properly.
+
+  // Update the UI based on the response.
+
+  const addEntry = async (customeEntries = null) => {   // e
+    // e?.preventDefault();
+
+    const dataToAdd = customeEntries || entries;
+    if (dataToAdd.length > 0) {
+      try {
+        // dispatch(showLoading()); // Optional - if you're using a loading spinner
+
+        const formattedData = dataToAdd.map(entry => ({
+          uniqueId: entry.no,
+          firstPrice: Number(entry.f),
+          secondPrice: Number(entry.s)
+        }));
+
+        const response = await axios.post("/api/v1/data/add-data", {
+          timeSlot: drawTime,
+          data: formattedData,
+        }, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // dispatch(hideLoading()); // Optional
+        alert("Entries added successfully!");   // we have to use toast message instead of this (TBT)
+        // setEntries([]); // Clear after saving
+
+        await getAndSetVoucherData();
+
+      } catch (error) {
+        dispatch(hideLoading());
+        console.error("Error adding entries:", error.response?.data?.error || error.message);
+        alert(error.response?.data?.error || "Failed to add entries");
+      }
+    } else {
+      alert("No entries to save!");
     }
   };
+
+
+  //   const getDataById = async (id) => {
+  //   console.log("get data");
+  //     console.log(id);
+
+  //   try {
+  //     const response = await axios.get(`/api/v1/data/get-data/${id}`, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+
+  //     const backendData = response.data.data.data;
+
+  //     const formatted = backendData.map((entry, index) => ({
+  //       id: index + 1,
+  //       no: entry.uniqueId,
+  //       f: entry.firstPrice,
+  //       s: entry.secondPrice,
+  //       selected: false,
+  //     }));
+  //     console.log(formatted);
+
+  //     // Append the fetched data to the existing entries
+  //     setEntries(formatted);
+  //     console.log("data", formatted);
+  //     console.log(entries); 
+
+  //   } catch (error) {
+  //     console.error("Error fetching data by ID:", error.response?.data?.error || error.message);
+  //     alert("Failed to fetch data by ID");
+  //   }
+  // };
+
+
 
   const deleteSelected = () => {
     setEntries(entries.filter(entry => !entry.selected));
@@ -487,7 +784,7 @@ const Layout = () => {
     setSelectAll(!selectAll);
     setEntries(entries.map(entry => ({ ...entry, selected: !selectAll })));
   };
-  
+
 
 
   return (
@@ -524,7 +821,7 @@ const Layout = () => {
             <div className="flex items-center gap-2 text-lg">
               <FaUserTie className="text-blue-400" />
               <span className="font-semibold">Name:</span>
-             
+
               <input
                 type="text"
                 value={userData?.user.username}
@@ -701,8 +998,8 @@ const Layout = () => {
             </p>
           </div>
 
-          <div  className='bg-gray-800 rounded-xl p-4 border border-gray-900' >
-              Draw numbers
+          <div className='bg-gray-800 rounded-xl p-4 border border-gray-900' >
+            Draw numbers
           </div>
 
         </header>
@@ -714,7 +1011,7 @@ const Layout = () => {
 
           {/* Table Content */}
           <div className='bg-gray-800 border border-gray-700 min-h-[500px] p-6 rounded-lg shadow-md flex flex-col'>
-          <div className='flex space-x-4 mb-4'>
+            <div className='flex space-x-4 mb-4'>
               <button onClick={toggleSelectAll} className='bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-400 flex items-center gap-2'>
                 <FaCheckSquare /> {selectAll ? 'Deselect All' : 'Select All'}
               </button>
@@ -723,40 +1020,48 @@ const Layout = () => {
               </button>
               <button onClick={deleteAll} className='bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-500'>Delete All</button>
             </div>
-            {/* // displaying in the tabke  */}
-            <div className='max-h-60 border rounded-md overflow-y-auto'>
 
+
+            {        /* Table Header */}
+            <div className='flex justify-center my-2'>
+              <span className='text-2xl'>{`(${entries.length})`}</span>
+            </div>
+
+            {entries.length === 0 && (
+              <div className='text-center text-red-500'>No entries to display</div>
+            )}
+
+            <div className='max-h-80 border rounded-md overflow-y-auto'>
               <table className='w-full border-collapse'>
                 <thead>
-                  <tr className='bg-gray-200'>
+                  <tr className='bg-gray-700'>
                     <th className='border p-2'>Select</th>
                     <th className='border p-2'>Num</th>
                     <th className='border p-2'>F</th>
                     <th className='border p-2'>S</th>
                     <th className='border p-2'>Actions</th>
-
                   </tr>
-                  <div className='flex justify-center'>
-                    <span className='text-2xl'>{`(${entries.length})`}</span>
-                  </div>
                 </thead>
                 <tbody>
-                  {entries.map(entry => (
+                  {entries.map((entry) => (
                     <tr key={entry.id} className='border-b'>
                       <td className='border p-2 text-center'>
                         <input
                           type='checkbox'
                           checked={entry.selected}
-                          onChange={() =>
-                            setEntries(entries.map(e => e.id === entry.id ? { ...e, selected: !e.selected } : e))
-                          }
+                          onChange={() => toggleCheckbox(entry.id)}
                         />
                       </td>
                       <td className='border p-2 text-center'>{entry.no}</td>
                       <td className='border p-2 text-center'>{entry.f}</td>
                       <td className='border p-2 text-center'>{entry.s}</td>
                       <td className='border p-2 text-center'>
-                        <button className='bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-400'>Edit</button>
+                        <button
+                          onClick={() => handleDeleteRecord(entry._id)}
+                          className='bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600'
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -772,6 +1077,7 @@ const Layout = () => {
                 onChange={(e) => setNo(e.target.value)}
                 placeholder='NO'
                 className='border p-2 rounded w-1/3'
+                disabled={isPastClosingTime(drawTime)}
               />
               <input
                 type='text'
@@ -779,6 +1085,7 @@ const Layout = () => {
                 onChange={(e) => setF(e.target.value)}
                 placeholder='F'
                 className='border p-2 rounded w-1/3'
+                disabled={isPastClosingTime(drawTime)}
               />
               <input
                 type='text'
@@ -786,8 +1093,15 @@ const Layout = () => {
                 onChange={(e) => setS(e.target.value)}
                 placeholder='S'
                 className='border p-2 rounded w-1/3'
+                disabled={isPastClosingTime(drawTime)}
               />
-              <button onClick={addEntry} className='bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500'>Save</button>
+              <button
+                onClick={(e) => addEntry(e)}
+                className={`px-4 py-2 rounded text-white ${isPastClosingTime(drawTime) ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-500"}`}
+                disabled={isPastClosingTime(drawTime)}
+              >
+                Save
+              </button>
             </div>
           </div>
 
@@ -800,77 +1114,77 @@ const Layout = () => {
 
 
           <div className="bg-gray-800 border border-gray-700 p-6 rounded-lg shadow-md text-white">
-      <div className="flex space-x-4 mb-4">
-        <div>
-          {/* Hidden file input */}
-          <input type="file" className="hidden" id="fileInput" onChange={handleFileChange} />
+            <div className="flex space-x-4 mb-4">
+              <div>
+                {/* Hidden file input */}
+                <input type="file" className="hidden" id="fileInput" onChange={handleFileChange} />
 
-          {/* Upload Button */}
-          <label htmlFor="fileInput" className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-400 cursor-pointer">
-            <FaFileUpload />
-            <span>Choose File</span>
-          </label>
+                {/* Upload Button */}
+                <label htmlFor="fileInput" className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-400 cursor-pointer">
+                  <FaFileUpload />
+                  <span>Choose File</span>
+                </label>
 
-          <button onClick={handleUpload} className="flex items-center space-x-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-400 mt-2">
-            <FaArrowUp />
-            <span>Upload Sheet</span>
-          </button>
+                <button onClick={handleUpload} className="flex items-center space-x-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-400 mt-2">
+                  <FaArrowUp />
+                  <span>Upload Sheet</span>
+                </button>
+              </div>
+              <button className="flex items-center space-x-2 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-400">
+                <FaEye />
+                <span>View Sheet</span>
+              </button>
+            </div>
+            {/* Buttons Section */}
+            <div className="flex gap-4 pt-4">
+              {/* Left Column */}
+              <div className="w-1/2">
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRing}>
+                  <FaStar /> <span>Chakri Ring</span>
+                </button>
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRingBack}>
+                  <FaStar /> <span>Back Ring</span>
+                </button>
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRingCross}>
+                  <FaStar /> <span>Cross Ring</span>
+                </button>
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRingDouble}>
+                  <FaStar /> <span>Double Cross</span>
+                </button>
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handle5FiguresRing}>
+                  <FaStar /> <span>5 Figure Ring</span>
+                </button>
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handle6FigureRing}>
+                  <FaStar /> <span>6 Figure Ring</span>
+                </button>
+              </div>
+              {/* Right Column */}
+              <div className="w-1/2">
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handle4FiguresRing}>
+                  <FaStar /> <span>4 Figure Ring</span>
+                </button>
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleAKR2Figure}>
+                  <FaMoon /> <span>2 Figure AKR</span>
+                </button>
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleAKR4Figure}>
+                  <FaMoon /> <span>4 Figure AKR</span>
+                </button>
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleAKR5Figure}>
+                  <FaMoon /> <span>5 Figure AKR</span>
+                </button>
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleAKR6Figure}>
+                  <FaMoon /> <span>6 Figure AKR</span>
+                </button>
+                <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleRingPlusAKR}>
+                  <FaMoon /> <span>Ring + AKR</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
         </div>
-        <button className="flex items-center space-x-2 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-400">
-          <FaEye />
-          <span>View Sheet</span>
-        </button>
+        {/* this is grid of two cols of table and buttons */}
       </div>
-      {/* Buttons Section */}
-      <div className="flex gap-4 pt-4">
-        {/* Left Column */}
-        <div className="w-1/2">
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRing}>
-            <FaStar /> <span>Chakri Ring</span>
-          </button>
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRingBack}>
-            <FaStar /> <span>Back Ring</span>
-          </button>
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRingCross}>
-            <FaStar /> <span>Cross Ring</span>
-          </button>
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handleChakriRingDouble}>
-            <FaStar /> <span>Double Cross</span>
-          </button>
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handle5FiguresRing}>
-            <FaStar /> <span>5 Figure Ring</span>
-          </button>
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handle6FigureRing}>
-            <FaStar /> <span>6 Figure Ring</span>
-          </button>
-        </div>
-        {/* Right Column */}
-        <div className="w-1/2">
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2" onClick={handle4FiguresRing}>
-            <FaStar /> <span>4 Figure Ring</span>
-          </button>
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2">
-            <FaMoon /> <span>2 Figure AKR</span>
-          </button>
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2">
-            <FaMoon /> <span>4 Figure AKR</span>
-          </button>
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2">
-            <FaMoon /> <span>5 Figure AKR</span>
-          </button>
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2">
-            <FaMoon /> <span>6 Figure AKR</span>
-          </button>
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 m-2">
-            <FaMoon /> <span>Ring + AKR</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-        </div>
-          {/* this is grid of two cols of table and buttons */}
-      </div>  
       {/* this is the end of center content */}
 
 

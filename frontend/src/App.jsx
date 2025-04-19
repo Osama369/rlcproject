@@ -12,6 +12,10 @@ import { useSelector } from 'react-redux';
 import Spinner from './components/Spinner';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
+import AdminLogin from './pages/admin/adminLogin';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
+import AdminPublicRoute from './components/AdminPublicRoute';
+
 
 // this is the routing setup 
 function App() {
@@ -32,28 +36,40 @@ function App() {
 
         {/* public routes */}
         <Route path='login' element={
-           <PublicRoute>
+          <PublicRoute>
             <Login />
-           </PublicRoute>
+          </PublicRoute>
 
-          }></Route>
+        }></Route>
 
         <Route path='register' element={
-           
-           <PublicRoute>
-             <Register />
-           </PublicRoute>
 
-          }></Route>
+          <PublicRoute>
+            <Register />
+          </PublicRoute>
 
-        {/* admin routes */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Dashboard />} />
+        }></Route>
+        <Route path="/admin-login" element={
+          <AdminPublicRoute>
+            <AdminLogin />
+          </AdminPublicRoute>
+        } />
+
+        <Route
+          path="/admin"
+          element={
+            <AdminProtectedRoute>
+              <AdminLayout />
+            </AdminProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />  {/* Default to Dashboard */}
           <Route path="manage-users" element={<ManageUsers />} />
         </Route>
+      </Routes>
 
 
-      </Routes>)}
+      )}
 
     </BrowserRouter>
 

@@ -32,7 +32,7 @@ const login = async (req, res) => {
   }
 }
 
-const adminLogin = async (req, res) => {
+const adminLogin = async (req, res) => {  // this is the admin login
   const { username, password } = req.body;
   try {
     const user = await User.findOne({ username });

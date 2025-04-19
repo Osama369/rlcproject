@@ -20,7 +20,7 @@ const createUser = async (req, res) => {  // can create user
   }
 };
 
-const getUserById = async (req, res) => {  // getUser
+const getUserById = async (req, res) => {  // getUser only for user to get profile
   const { id } = req.params;
   try {
     const user = await User.findById(id).select("-password");
@@ -114,7 +114,7 @@ const initializeUserBalance = async (req, res) => {
   }
 };
 
-const deductUserBalance = async (req, res) => {
+const deductUserBalance = async (req, res) => { // this would be call in user profile 
   const { id } = req.params;
   const { amount } = req.body;
   try {
