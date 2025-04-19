@@ -24,7 +24,7 @@ const login = async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-      expiresIn: '1h',
+      expiresIn: '7d',
     });
     res.json({ token , message: 'User logged in successfully' });
   } catch (error) {
@@ -32,7 +32,7 @@ const login = async (req, res) => {
   }
 }
 
-const adminLogin = async (req, res) => {
+const adminLogin = async (req, res) => {  // this is the admin login
   const { username, password } = req.body;
   try {
     const user = await User.findOne({ username });

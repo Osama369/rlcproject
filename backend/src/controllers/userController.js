@@ -1,6 +1,6 @@
 import User from "../models/User.js";
 
-const getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res) => {   // admin will see all users at admin panel
   try {
     const users = await User.find().select("-password");
     res.json(users);
@@ -9,7 +9,7 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-const createUser = async (req, res) => {
+const createUser = async (req, res) => {  // can create user
   const { username, password, dealerId, city , phone , email } = req.body;
   try {
     const user = new User({ username, password, city, dealerId , phone , email }); 
@@ -20,7 +20,7 @@ const createUser = async (req, res) => {
   }
 };
 
-const getUserById = async (req, res) => {
+const getUserById = async (req, res) => {  // getUser only for user to get profile
   const { id } = req.params;
   try {
     const user = await User.findById(id).select("-password");
@@ -114,7 +114,7 @@ const initializeUserBalance = async (req, res) => {
   }
 };
 
-const deductUserBalance = async (req, res) => {
+const deductUserBalance = async (req, res) => { // this would be call in user profile 
   const { id } = req.params;
   const { amount } = req.body;
   try {
