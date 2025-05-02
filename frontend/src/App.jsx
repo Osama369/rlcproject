@@ -15,7 +15,8 @@ import PublicRoute from './components/PublicRoute';
 import AdminLogin from './pages/admin/adminLogin';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import AdminPublicRoute from './components/AdminPublicRoute';
-
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // this is the routing setup 
 function App() {
@@ -23,6 +24,7 @@ function App() {
   return (
 
     <BrowserRouter>
+    <ToastContainer position="top-right" autoClose={2000} /> {/* ✅ This line */}
       {loading ? (<Spinner />) : (<Routes>
         {/* homepage will be protected route  */}
         <Route path="/" element={
