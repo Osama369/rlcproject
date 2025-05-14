@@ -66,7 +66,6 @@ const Center = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [file, setFile] = useState(null);
-  // const [newId, setNewId] = useState(null); // 👈 new state to track latest data _id
 
   // State for storing permutations
   const [permutations, setPermutations] = useState([]);  // we will set permutation in the table entreis
@@ -1252,7 +1251,3 @@ const Center = () => {
 }
 
 export default Center
-
-
-
-
